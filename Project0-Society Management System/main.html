@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Society Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --gold: #c9a84c;
+    --gold-light: #e8d5a3;
+    --rust: #b5451b;
+    --sage: #4a7c59;
+    --slate: #3d4f6b;
+    --mist: #e8ede6;
+    --shadow: rgba(26,26,46,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 10%, rgba(201,168,76,.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 90%, rgba(74,124,89,.08) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .page { position: relative; z-index: 1; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; }
+
+  /* ══════════════════════════════════
+     LOGIN / REGISTER SCREENS
+  ══════════════════════════════════ */
+  #loginScreen, #registerScreen {
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .auth-card {
+    background: #fff;
+    border-radius: 2px;
+    box-shadow: 0 2px 0 var(--gold), 0 8px 40px var(--shadow);
+    padding: 3rem 3.5rem;
+    width: 100%;
+    max-width: 440px;
+    position: relative;
+    animation: slideUp .5s ease both;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 3rem; right: 3rem; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .brand {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .brand-icon {
+    width: 56px; height: 56px;
+    background: var(--ink);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  .brand h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--ink);
+    letter-spacing: .01em;
+    line-height: 1.2;
+  }
+
+  .brand p {
+    font-size: .8rem;
+    color: #888;
+    margin-top: .3rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+
+  /* ── FORM ── */
+  .field { margin-bottom: 1.4rem; }
+
+  label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--slate);
+    margin-bottom: .5rem;
+  }
+
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    border: 1.5px solid #ddd;
+    border-radius: 4px;
+    padding: .7rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    color: var(--ink);
+    background: var(--paper);
+    transition: border-color .2s, box-shadow .2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,.15);
+    background: #fff;
+  }
+
+  .show-pw {
+    display: flex; align-items: center; gap: .5rem;
+    margin-top: .6rem;
+    font-size: .82rem; color: #888;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .show-pw input[type="checkbox"] { accent-color: var(--gold); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .75rem 1.8rem;
+    border: none; border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem; font-weight: 600;
+    letter-spacing: .04em;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .btn-primary {
+    background: var(--ink); color: #fff;
+    width: 100%; margin-top: .5rem;
+  }
+
+  .btn-primary:hover { background: var(--slate); transform: translateY(-1px); box-shadow: 0 4px 16px var(--shadow); }
+
+  .auth-footer {
+    margin-top: 1.5rem;
+    text-align: center;
+    font-size: .85rem;
+    color: #888;
+  }
+
+  .auth-footer a {
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .auth-footer a:hover { text-decoration: underline; }
+
+  /* ══════════════════════════════════
+     DASHBOARD SCREEN
+  ══════════════════════════════════ */
+  #dashScreen {
+    flex-direction: column;
+    background: var(--mist);
+  }
+
+  /* ── HEADER ── */
+  .topbar {
+    background: var(--ink);
+    color: #fff;
+    padding: 0 2rem;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,.2);
+  }
+
+  .topbar-brand {
+    display: flex; align-items: center; gap: .75rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    letter-spacing: .02em;
+  }
+
+  .topbar-brand span { color: var(--gold-light); }
+
+  .topbar-right { display: flex; align-items: center; gap: 1.2rem; }
+
+  .user-badge {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .85rem;
+  }
+
+  .user-avatar {
+    width: 32px; height: 32px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .8rem; color: var(--ink);
+  }
+
+  .btn-logout {
+    background: rgba(255,255,255,.08);
+    color: #ccc;
+    border: 1px solid rgba(255,255,255,.15);
+    padding: .4rem 1rem;
+    font-size: .8rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all .2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .btn-logout:hover { background: rgba(255,255,255,.15); color: #fff; }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    animation: fadeIn .4s ease both;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .page-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap; gap: 1rem;
+  }
+
+  .page-title h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    color: var(--ink);
+  }
+
+  .page-title p { font-size: .88rem; color: #888; margin-top: .25rem; }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 6px;
+    padding: 1.2rem 1.5rem;
+    border-left: 3px solid var(--gold);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+
+  .stat-card .value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: var(--ink);
+    line-height: 1;
+  }
+
+  .stat-card .label {
+    font-size: .75rem;
+    color: #999;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-top: .3rem;
+  }
+
+  /* ── INPUT PANEL ── */
+  .panel {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px var(--shadow);
+    margin-bottom: 2rem;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f0ece3;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .panel-header h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--ink);
+  }
+
+  .panel-body { padding: 1.5rem; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem 1.5rem;
+  }
+
+  .form-actions {
+    display: flex; gap: .75rem; flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #f0ece3;
+  }
+
+  .btn-success {
+    background: var(--sage); color: #fff;
+  }
+  .btn-success:hover { background: #3a6347; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(74,124,89,.3); }
+
+  .btn-danger {
+    background: var(--rust); color: #fff;
+  }
+  .btn-danger:hover { background: #943a17; transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent; color: var(--slate);
+    border: 1.5px solid #ccc;
+  }
+  .btn-outline:hover { border-color: var(--slate); background: var(--mist); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px var(--shadow);
+    background: #fff;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+  }
+
+  thead th {
+    background: var(--ink);
+    color: var(--gold-light);
+    padding: .85rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f5f0e8;
+    transition: background .15s;
+    cursor: pointer;
+  }
+
+  tbody tr:hover { background: #fdf9f2; }
+  tbody tr.selected { background: rgba(201,168,76,.1); }
+
+  tbody td {
+    padding: .8rem 1rem;
+    color: var(--ink);
+  }
+
+  .badge {
+    display: inline-block;
+    padding: .2rem .65rem;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .badge-residential { background: rgba(74,124,89,.12); color: var(--sage); }
+  .badge-commercial   { background: rgba(61,79,107,.12); color: var(--slate); }
+  .badge-mixed        { background: rgba(201,168,76,.18); color: #8a6d1a; }
+
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    display: flex; gap: .6rem; align-items: center;
+  }
+
+  .search-bar input {
+    border: 1.5px solid #ddd;
+    border-radius: 4px;
+    padding: .5rem .9rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .88rem;
+    background: var(--paper);
+    outline: none;
+    min-width: 220px;
+    transition: border-color .2s;
+  }
+
+  .search-bar input:focus { border-color: var(--gold); }
+
+  .btn-sm {
+    padding: .5rem 1rem;
+    font-size: .82rem;
+  }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--ink); color: #fff;
+    padding: .85rem 1.5rem;
+    border-radius: 4px;
+    font-size: .88rem;
+    border-left: 3px solid var(--gold);
+    box-shadow: 0 4px 24px rgba(0,0,0,.25);
+    z-index: 999;
+    transform: translateY(80px); opacity: 0;
+    transition: all .35s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.success { border-left-color: var(--sage); }
+  #toast.error   { border-left-color: var(--rust); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #bbb;
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: .75rem; }
+  .empty-state p { font-size: .9rem; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .auth-card { padding: 2rem 1.5rem; }
+    .main { padding: 1rem; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ LOGIN ══ -->
+  <div id="loginScreen" class="screen active">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-icon">🏘</div>
+        <h1>Society Management</h1>
+        <p>Resident Portal</p>
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+        <label class="show-pw">
+          <input type="checkbox" onchange="togglePw('loginPass',this)"> Show password
+        </label>
+      </div>
+
+      <button class="btn btn-primary" onclick="doLogin()">Login</button>
+
+      <div class="auth-footer">
+        New user? <a onclick="showScreen('registerScreen')">Register here</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ REGISTER ══ -->
+  <div id="registerScreen" class="screen">
+    <div class="auth-card">
+      <div class="brand">
+        <div class="brand-icon">✦</div>
+        <h1>Create Account</h1>
+        <p>New User Registration</p>
+      </div>
+
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="regUser" placeholder="Choose a username" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="regPass" placeholder="Choose a password">
+        <label class="show-pw">
+          <input type="checkbox" onchange="togglePw('regPass',this)"> Show password
+        </label>
+      </div>
+
+      <button class="btn btn-primary" onclick="doRegister()">Sign Up</button>
+
+      <div class="auth-footer">
+        Already registered? <a onclick="showScreen('loginScreen')">Login here</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD ══ -->
+  <div id="dashScreen" class="screen">
+    <header class="topbar">
+      <div class="topbar-brand">
+        🏘 <span>Society</span> Management
+      </div>
+      <div class="topbar-right">
+        <div class="user-badge">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <span id="userLabel" style="font-size:.85rem;color:#ccc;"></span>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">Logout</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="page-header">
+        <div class="page-title">
+          <h2>Society Registry</h2>
+          <p>Manage all registered housing societies</p>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="searchInput" placeholder="Search societies…" oninput="renderTable()">
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('searchInput').value='';renderTable()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" id="statsRow"></div>
+
+      <!-- Add / Edit Form -->
+      <div class="panel">
+        <div class="panel-header">
+          <h3 id="formTitle">Add New Society</h3>
+          <button class="btn btn-outline btn-sm" onclick="clearForm()">Clear</button>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field" style="margin-bottom:0">
+              <label>Society Name</label>
+              <input type="text" id="fName" placeholder="e.g. Green Valley Apartments">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>No. of Houses</label>
+              <input type="text" id="fHouses" placeholder="e.g. 120">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>Address</label>
+              <input type="text" id="fAddress" placeholder="Street / Plot no.">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>City</label>
+              <input type="text" id="fCity" placeholder="e.g. Mumbai">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>Pincode</label>
+              <input type="text" id="fPin" placeholder="e.g. 400001">
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>Type</label>
+              <input type="text" id="fType" placeholder="Residential / Commercial">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-success" id="insertBtn" onclick="insertRow()">Insert / Add</button>
+            <button class="btn btn-danger"  id="deleteBtn" onclick="deleteRow()" disabled>Delete Selected</button>
+            <button class="btn btn-outline" onclick="clearForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap" id="tableWrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Society Name</th>
+              <th>No. of Houses</th>
+              <th>Address</th>
+              <th>City</th>
+              <th>Pincode</th>
+              <th>Type</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div id="emptyState" class="empty-state" style="display:none">
+          <div class="icon">🏘</div>
+          <p>No societies found. Add one above!</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA STORE ──────────────────────────────────────────────────────────────
+let users    = [{ username: 'admin', password: 'admin123' }];
+let societies = [];
+let currentUser = null;
+let selectedIdx  = -1;
+let editMode     = false;
+
+// ── UTILS ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function togglePw(id, cb) {
+  document.getElementById(id).type = cb.checked ? 'text' : 'password';
+}
+
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  setTimeout(() => t.className = '', 2800);
+}
+
+// ── AUTH ─────────────────────────────────────────────────────────────────────
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if (!u || !p) { toast('Please fill in all fields.', 'error'); return; }
+  const found = users.find(x => x.username === u && x.password === p);
+  if (!found) { toast('Authentication failed. Please try again.', 'error'); return; }
+  currentUser = u;
+  document.getElementById('userLabel').textContent = u;
+  document.getElementById('userAvatar').textContent = u[0].toUpperCase();
+  showScreen('dashScreen');
+  renderStats();
+  renderTable();
+  toast(`Welcome back, ${u}!`);
+}
+
+function doRegister() {
+  const u = document.getElementById('regUser').value.trim();
+  const p = document.getElementById('regPass').value;
+  if (!u || !p) { toast('Please fill in all fields.', 'error'); return; }
+  if (users.find(x => x.username === u)) { toast('Username already exists.', 'error'); return; }
+  users.push({ username: u, password: p });
+  toast('Account created! You can now log in.');
+  showScreen('loginScreen');
+  document.getElementById('loginUser').value = u;
+  document.getElementById('loginPass').value = '';
+}
+
+function doLogout() {
+  currentUser = null;
+  selectedIdx = -1;
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  showScreen('loginScreen');
+  toast('Logged out successfully.');
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderStats() {
+  const total  = societies.length;
+  const houses = societies.reduce((s, r) => s + (parseInt(r.houses) || 0), 0);
+  const cities = new Set(societies.map(r => r.city.trim()).filter(Boolean)).size;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="value">${total}</div><div class="label">Societies</div></div>
+    <div class="stat-card"><div class="value">${houses.toLocaleString()}</div><div class="label">Total Houses</div></div>
+    <div class="stat-card"><div class="value">${cities}</div><div class="label">Cities</div></div>
+  `;
+}
+
+function getFiltered() {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  if (!q) return societies;
+  return societies.filter(r =>
+    Object.values(r).some(v => String(v).toLowerCase().includes(q))
+  );
+}
+
+function renderTable() {
+  const rows = getFiltered();
+  const tbody = document.getElementById('tableBody');
+  const empty = document.getElementById('emptyState');
+
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const typeBadge = (t) => {
+    t = (t || '').toLowerCase();
+    let cls = 'badge-mixed';
+    if (t.includes('res')) cls = 'badge-residential';
+    else if (t.includes('com')) cls = 'badge-commercial';
+    return `<span class="badge ${cls}">${t || '—'}</span>`;
+  };
+
+  tbody.innerHTML = rows.map((r, i) => {
+    const globalIdx = societies.indexOf(r);
+    return `<tr class="${globalIdx === selectedIdx ? 'selected' : ''}" onclick="selectRow(${globalIdx})">
+      <td style="color:#bbb;font-size:.8rem">${i + 1}</td>
+      <td><strong>${r.name || '—'}</strong></td>
+      <td>${r.houses || '—'}</td>
+      <td>${r.address || '—'}</td>
+      <td>${r.city || '—'}</td>
+      <td>${r.pin || '—'}</td>
+      <td>${typeBadge(r.type)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function selectRow(idx) {
+  selectedIdx = idx;
+  const r = societies[idx];
+  document.getElementById('fName').value    = r.name;
+  document.getElementById('fHouses').value  = r.houses;
+  document.getElementById('fAddress').value = r.address;
+  document.getElementById('fCity').value    = r.city;
+  document.getElementById('fPin').value     = r.pin;
+  document.getElementById('fType').value    = r.type;
+  document.getElementById('formTitle').textContent = 'Edit Society';
+  document.getElementById('insertBtn').textContent = 'Update';
+  document.getElementById('deleteBtn').disabled = false;
+  editMode = true;
+  renderTable();
+}
+
+function insertRow() {
+  const name    = document.getElementById('fName').value.trim();
+  const houses  = document.getElementById('fHouses').value.trim();
+  const address = document.getElementById('fAddress').value.trim();
+  const city    = document.getElementById('fCity').value.trim();
+  const pin     = document.getElementById('fPin').value.trim();
+  const type    = document.getElementById('fType').value.trim();
+
+  if (!name) { toast('Society name is required.', 'error'); return; }
+
+  if (editMode && selectedIdx >= 0) {
+    societies[selectedIdx] = { name, houses, address, city, pin, type };
+    toast('Society updated successfully.');
+    clearForm();
+  } else {
+    societies.push({ name, houses, address, city, pin, type });
+    toast('Society added successfully.');
+    clearForm();
+  }
+  renderStats();
+  renderTable();
+}
+
+function deleteRow() {
+  if (selectedIdx < 0) return;
+  const name = societies[selectedIdx].name;
+  societies.splice(selectedIdx, 1);
+  toast(`"${name}" deleted.`, 'error');
+  clearForm();
+  renderStats();
+  renderTable();
+}
+
+function clearForm() {
+  ['fName','fHouses','fAddress','fCity','fPin','fType'].forEach(id =>
+    document.getElementById(id).value = ''
+  );
+  selectedIdx = -1;
+  editMode = false;
+  document.getElementById('formTitle').textContent = 'Add New Society';
+  document.getElementById('insertBtn').textContent = 'Insert / Add';
+  document.getElementById('deleteBtn').disabled = true;
+  renderTable();
+}
+
+// ── SEED DEMO DATA ───────────────────────────────────────────────────────────
+societies = [
+  { name: 'Green Valley Apartments', houses: '96',  address: '14 Park Rd',    city: 'Mumbai',    pin: '400051', type: 'Residential' },
+  { name: 'Sunrise Commercial Hub',  houses: '40',  address: '7 Ring Road',   city: 'Delhi',     pin: '110001', type: 'Commercial'  },
+  { name: 'Heritage Gardens',        houses: '144', address: '22 Lake View',  city: 'Bangalore', pin: '560001', type: 'Mixed'       },
+];
+</script>
+</body>
+</html>

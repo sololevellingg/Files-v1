@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Society Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --night: #0d1b2a;
+  --dusk:  #1a2e45;
+  --horizon: #ff6b35;
+  --amber: #ffaa44;
+  --lilac: #8b7bb5;
+  --glow: #ffd166;
+  --cream: #fdf6ec;
+  --paper: #f8f2e6;
+  --ink: #1a1a2e;
+  --mist: #eef2f7;
+  --shadow: rgba(13,27,42,0.15);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Outfit',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;}
+
+/* AUTH */
+#loginScreen,#registerScreen{align-items:stretch;background:var(--night);}
+.auth-left{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;position:relative;overflow:hidden;background:linear-gradient(160deg,#0d1b2a 0%,#1a2e45 40%,#2d1b4e 100%);}
+.auth-left::before{content:'';position:absolute;bottom:0;left:0;right:0;height:55%;background:linear-gradient(0deg,rgba(255,107,53,.35) 0%,rgba(255,170,68,.2) 30%,transparent 70%);}
+.stars{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+.star{position:absolute;background:#fff;border-radius:50%;animation:twinkle 3s ease-in-out infinite;}
+@keyframes twinkle{0%,100%{opacity:.2;transform:scale(1);}50%{opacity:1;transform:scale(1.4);}}
+.logo-wrap{position:relative;z-index:2;text-align:center;}
+.skyline-logo{width:320px;height:180px;filter:drop-shadow(0 8px 32px rgba(255,107,53,.4));animation:logoFloat 4s ease-in-out infinite;}
+@keyframes logoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+.logo-tagline{font-family:'Cormorant Garamond',serif;font-size:1.55rem;color:var(--glow);letter-spacing:.08em;margin-top:1.2rem;font-weight:600;}
+.logo-sub{font-size:.75rem;color:rgba(255,255,255,.4);letter-spacing:.2em;text-transform:uppercase;margin-top:.4rem;}
+.orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;animation:orbDrift 8s ease-in-out infinite;}
+.orb1{width:200px;height:200px;background:rgba(255,107,53,.12);top:10%;left:-5%;animation-delay:0s;}
+.orb2{width:150px;height:150px;background:rgba(139,123,181,.15);top:40%;right:-5%;animation-delay:3s;}
+.orb3{width:120px;height:120px;background:rgba(255,209,102,.1);bottom:15%;left:25%;animation-delay:1.5s;}
+@keyframes orbDrift{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.1);}}
+.auth-right{width:440px;display:flex;align-items:center;justify-content:center;padding:3rem 2.5rem;background:var(--cream);box-shadow:-12px 0 60px rgba(0,0,0,.3);}
+.auth-form-wrap{width:100%;animation:slideUp .5s ease both;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+.auth-form-wrap h2{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--ink);margin-bottom:.3rem;}
+.auth-form-wrap p.sub{font-size:.82rem;color:#999;margin-bottom:2rem;letter-spacing:.04em;}
+.field{margin-bottom:1.3rem;}
+label.lbl{display:block;font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#888;margin-bottom:.45rem;}
+input[type="text"],input[type="password"]{width:100%;border:1.5px solid #e0d9cc;border-radius:6px;padding:.72rem 1rem;font-family:'Outfit',sans-serif;font-size:.95rem;color:var(--ink);background:#fff;outline:none;transition:border-color .2s,box-shadow .2s;}
+input:focus{border-color:var(--horizon);box-shadow:0 0 0 3px rgba(255,107,53,.12);}
+.show-pw{display:flex;align-items:center;gap:.5rem;margin-top:.55rem;font-size:.8rem;color:#aaa;cursor:pointer;user-select:none;}
+.show-pw input{accent-color:var(--horizon);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.75rem 1.8rem;border:none;border-radius:6px;font-family:'Outfit',sans-serif;font-size:.9rem;font-weight:600;letter-spacing:.03em;cursor:pointer;transition:all .2s;}
+.btn-primary{width:100%;margin-top:.5rem;background:linear-gradient(135deg,#ff6b35,#e8502a);color:#fff;box-shadow:0 4px 20px rgba(255,107,53,.35);}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(255,107,53,.45);}
+.auth-footer{margin-top:1.5rem;text-align:center;font-size:.85rem;color:#aaa;}
+.auth-footer a{color:var(--horizon);text-decoration:none;font-weight:600;cursor:pointer;}
+.auth-footer a:hover{text-decoration:underline;}
+
+/* DASHBOARD */
+#dashScreen{flex-direction:column;background:var(--mist);}
+.topbar{background:var(--night);height:64px;padding:0 2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 16px rgba(0,0,0,.25);flex-shrink:0;}
+.topbar-brand{display:flex;align-items:center;gap:.9rem;}
+.mini-skyline{width:52px;height:30px;filter:drop-shadow(0 2px 6px rgba(255,107,53,.5));}
+.topbar-brand-text{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:#fff;letter-spacing:.04em;}
+.topbar-brand-text span{color:var(--amber);}
+.topbar-right{display:flex;align-items:center;gap:1rem;}
+.user-chip{display:flex;align-items:center;gap:.6rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:30px;padding:.3rem .9rem .3rem .4rem;}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--horizon),var(--amber));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#fff;}
+.user-name{font-size:.82rem;color:#ccc;}
+.btn-logout{background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.15);padding:.38rem 1rem;font-size:.78rem;border-radius:4px;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;}
+.btn-logout:hover{background:rgba(255,255,255,.1);color:#fff;}
+.main{flex:1;padding:2rem;overflow-y:auto;max-width:1280px;width:100%;margin:0 auto;animation:fadeIn .4s ease both;}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.8rem;flex-wrap:wrap;gap:1rem;}
+.page-title h2{font-family:'Cormorant Garamond',serif;font-size:2rem;color:var(--ink);}
+.page-title p{font-size:.85rem;color:#999;margin-top:.2rem;}
+.header-actions{display:flex;gap:.65rem;flex-wrap:wrap;align-items:center;}
+.btn-excel-up{background:#1d6f42;color:#fff;border:none;border-radius:6px;padding:.55rem 1.1rem;font-size:.82rem;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .2s;}
+.btn-excel-up:hover{background:#165a35;transform:translateY(-1px);box-shadow:0 4px 12px rgba(29,111,66,.3);}
+.btn-excel-down{background:#fff;color:#1d6f42;border:1.5px solid #1d6f42;border-radius:6px;padding:.55rem 1.1rem;font-size:.82rem;font-weight:600;font-family:'Outfit',sans-serif;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .2s;}
+.btn-excel-down:hover{background:#f0faf5;transform:translateY(-1px);}
+#xlsxInput{display:none;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1rem;margin-bottom:1.8rem;}
+.stat-card{background:#fff;border-radius:10px;padding:1.2rem 1.5rem;box-shadow:0 2px 10px var(--shadow);border-top:3px solid var(--horizon);transition:transform .2s;}
+.stat-card:hover{transform:translateY(-2px);}
+.stat-card:nth-child(2){border-top-color:var(--lilac);}
+.stat-card:nth-child(3){border-top-color:var(--amber);}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--ink);line-height:1;}
+.stat-lbl{font-size:.72rem;color:#bbb;letter-spacing:.08em;text-transform:uppercase;margin-top:.3rem;}
+.panel{background:#fff;border-radius:10px;box-shadow:0 2px 12px var(--shadow);margin-bottom:1.8rem;overflow:hidden;}
+.panel-header{padding:1rem 1.5rem;border-bottom:1px solid #f0ece3;display:flex;align-items:center;justify-content:space-between;background:#fdfaf5;}
+.panel-header h3{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--ink);}
+.panel-body{padding:1.5rem;}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem 1.5rem;}
+.form-field label.lbl{margin-bottom:.4rem;}
+.form-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1.2rem;border-top:1px solid #f0ece3;}
+.btn-add{background:linear-gradient(135deg,#2d8a4e,#1d6f42);color:#fff;box-shadow:0 3px 12px rgba(29,111,66,.25);}
+.btn-add:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(29,111,66,.35);}
+.btn-del{background:linear-gradient(135deg,#e05a3a,#c0392b);color:#fff;}
+.btn-del:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(192,57,43,.3);}
+.btn-clr{background:transparent;color:#888;border:1.5px solid #ddd;}
+.btn-clr:hover{border-color:#999;background:#f9f9f9;}
+.search-wrap{display:flex;gap:.6rem;align-items:center;}
+.search-wrap input{border:1.5px solid #e0d9cc;border-radius:6px;padding:.5rem .9rem;font-family:'Outfit',sans-serif;font-size:.88rem;background:#fff;outline:none;min-width:230px;transition:border-color .2s;}
+.search-wrap input:focus{border-color:var(--horizon);}
+.btn-sm{padding:.48rem 1rem;font-size:.8rem;}
+.btn-outline-sm{background:transparent;color:#888;border:1.5px solid #ddd;border-radius:6px;padding:.48rem 1rem;font-size:.8rem;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;}
+.btn-outline-sm:hover{border-color:#999;background:#f5f5f5;}
+.table-wrap{border-radius:10px;overflow:hidden;box-shadow:0 2px 12px var(--shadow);}
+table{width:100%;border-collapse:collapse;font-size:.88rem;}
+thead th{background:var(--night);color:rgba(255,209,102,.85);padding:.9rem 1rem;text-align:left;font-weight:600;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f5f0e8;transition:background .15s;cursor:pointer;}
+tbody tr:hover{background:#fffbf5;}
+tbody tr.selected{background:rgba(255,107,53,.07);}
+tbody td{padding:.8rem 1rem;color:var(--ink);}
+tbody tr:last-child{border-bottom:none;}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.7rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;}
+.badge-res{background:rgba(45,138,78,.1);color:#2d8a4e;}
+.badge-com{background:rgba(61,79,107,.1);color:#3d4f6b;}
+.badge-mix{background:rgba(255,107,53,.12);color:#c0502a;}
+.empty-state{text-align:center;padding:3.5rem 1rem;color:#ccc;background:#fff;}
+.empty-state .icon{font-size:3rem;margin-bottom:.75rem;}
+.empty-state p{font-size:.9rem;}
+#toast{position:fixed;bottom:2rem;right:2rem;padding:.85rem 1.5rem;border-radius:8px;font-size:.87rem;font-weight:500;background:var(--night);color:#fff;border-left:3px solid var(--horizon);box-shadow:0 6px 30px rgba(0,0,0,.25);z-index:999;pointer-events:none;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.ok{border-left-color:#2d8a4e;}
+#toast.err{border-left-color:#e05a3a;}
+@media(max-width:780px){.auth-left{display:none;}.auth-right{width:100%;padding:2rem 1.5rem;}.main{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen" class="screen active">
+  <div class="auth-left">
+    <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+    <div class="stars" id="starsContainer"></div>
+    <div class="logo-wrap">
+      <svg class="skyline-logo" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#0d1b2a"/>
+            <stop offset="45%" stop-color="#2d1b4e"/>
+            <stop offset="75%" stop-color="#c0392b" stop-opacity=".7"/>
+            <stop offset="100%" stop-color="#ff6b35" stop-opacity=".9"/>
+          </linearGradient>
+          <linearGradient id="sunGlow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffd166"/>
+            <stop offset="100%" stop-color="#ff6b35"/>
+          </linearGradient>
+          <linearGradient id="bldDark" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#1a2e45"/>
+            <stop offset="100%" stop-color="#0d1b2a"/>
+          </linearGradient>
+          <linearGradient id="bldMid" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#243b55"/>
+            <stop offset="100%" stop-color="#141e30"/>
+          </linearGradient>
+          <radialGradient id="sunRadial" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffd166"/>
+            <stop offset="60%" stop-color="#ff9a3c" stop-opacity=".6"/>
+            <stop offset="100%" stop-color="#ff6b35" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect width="320" height="180" fill="url(#sky)"/>
+        <ellipse cx="160" cy="135" rx="80" ry="28" fill="url(#sunRadial)" opacity=".9"/>
+        <circle cx="160" cy="128" r="18" fill="url(#sunGlow)" filter="url(#glow)"/>
+        <rect x="0" y="150" width="320" height="30" fill="#0d1b2a" opacity=".7"/>
+        <ellipse cx="160" cy="152" rx="45" ry="5" fill="#ffd166" opacity=".25"/>
+        <line x1="110" y1="158" x2="150" y2="158" stroke="#ffd166" stroke-width=".6" opacity=".3"/>
+        <line x1="165" y1="162" x2="200" y2="162" stroke="#ffd166" stroke-width=".6" opacity=".2"/>
+        <!-- Far bg -->
+        <rect x="30"  y="110" width="22" height="40" fill="#1a2e45" opacity=".7"/>
+        <rect x="55"  y="100" width="18" height="50" fill="#1a2e45" opacity=".7"/>
+        <rect x="240" y="105" width="20" height="45" fill="#1a2e45" opacity=".7"/>
+        <rect x="263" y="95"  width="24" height="55" fill="#1a2e45" opacity=".7"/>
+        <!-- Left cluster -->
+        <rect x="10" y="85" width="28" height="65" fill="url(#bldDark)"/>
+        <rect x="14" y="92" width="5" height="4" fill="#ffd166" opacity=".7"/>
+        <rect x="22" y="92" width="5" height="4" fill="#ffd166" opacity=".4"/>
+        <rect x="14" y="102" width="5" height="4" fill="#ffd166" opacity=".5"/>
+        <rect x="22" y="102" width="5" height="4" fill="#ffaa44" opacity=".6"/>
+        <rect x="14" y="112" width="5" height="4" fill="#ffd166" opacity=".3"/>
+        <rect x="22" y="112" width="5" height="4" fill="#ffd166" opacity=".7"/>
+        <rect x="42" y="70" width="35" height="80" fill="url(#bldMid)"/>
+        <rect x="47" y="65" width="8" height="8" fill="#243b55"/>
+        <rect x="47" y="78" width="6" height="5" fill="#ffd166" opacity=".6"/>
+        <rect x="56" y="78" width="6" height="5" fill="#ffd166" opacity=".8"/>
+        <rect x="64" y="78" width="6" height="5" fill="#ffd166" opacity=".3"/>
+        <rect x="47" y="90" width="6" height="5" fill="#ffd166" opacity=".5"/>
+        <rect x="56" y="90" width="6" height="5" fill="#ffaa44" opacity=".9"/>
+        <rect x="64" y="90" width="6" height="5" fill="#ffd166" opacity=".6"/>
+        <rect x="47" y="102" width="6" height="5" fill="#ffd166" opacity=".7"/>
+        <rect x="56" y="102" width="6" height="5" fill="#ffd166" opacity=".4"/>
+        <rect x="64" y="102" width="6" height="5" fill="#ffd166" opacity=".8"/>
+        <rect x="47" y="114" width="6" height="5" fill="#ffd166" opacity=".5"/>
+        <rect x="56" y="114" width="6" height="5" fill="#ffaa44" opacity=".7"/>
+        <!-- HERO TOWER -->
+        <rect x="130" y="40" width="60" height="110" fill="url(#bldMid)"/>
+        <polygon points="130,40 160,20 190,40" fill="#1a2e45"/>
+        <circle cx="160" cy="20" r="3" fill="#ff6b35" filter="url(#glow)"/>
+        <rect x="136" y="50" width="8" height="7" fill="#ffd166" opacity=".7"/>
+        <rect x="148" y="50" width="8" height="7" fill="#ffd166" opacity=".5"/>
+        <rect x="160" y="50" width="8" height="7" fill="#ffaa44" opacity=".9"/>
+        <rect x="172" y="50" width="8" height="7" fill="#ffd166" opacity=".6"/>
+        <rect x="136" y="63" width="8" height="7" fill="#ffd166" opacity=".4"/>
+        <rect x="148" y="63" width="8" height="7" fill="#ffd166" opacity=".8"/>
+        <rect x="160" y="63" width="8" height="7" fill="#ffd166" opacity=".6"/>
+        <rect x="172" y="63" width="8" height="7" fill="#ffaa44" opacity=".7"/>
+        <rect x="136" y="76" width="8" height="7" fill="#ffd166" opacity=".6"/>
+        <rect x="148" y="76" width="8" height="7" fill="#ffd166" opacity=".3"/>
+        <rect x="160" y="76" width="8" height="7" fill="#ffd166" opacity=".9"/>
+        <rect x="172" y="76" width="8" height="7" fill="#ffd166" opacity=".5"/>
+        <rect x="136" y="89" width="8" height="7" fill="#ffaa44" opacity=".7"/>
+        <rect x="148" y="89" width="8" height="7" fill="#ffd166" opacity=".6"/>
+        <rect x="160" y="89" width="8" height="7" fill="#ffd166" opacity=".4"/>
+        <rect x="172" y="89" width="8" height="7" fill="#ffd166" opacity=".8"/>
+        <rect x="136" y="102" width="8" height="7" fill="#ffd166" opacity=".5"/>
+        <rect x="148" y="102" width="8" height="7" fill="#ffaa44" opacity=".9"/>
+        <rect x="160" y="102" width="8" height="7" fill="#ffd166" opacity=".6"/>
+        <rect x="172" y="102" width="8" height="7" fill="#ffd166" opacity=".4"/>
+        <rect x="136" y="115" width="8" height="7" fill="#ffd166" opacity=".7"/>
+        <rect x="148" y="115" width="8" height="7" fill="#ffd166" opacity=".5"/>
+        <rect x="160" y="115" width="8" height="7" fill="#ffd166" opacity=".8"/>
+        <rect x="172" y="115" width="8" height="7" fill="#ffaa44" opacity=".6"/>
+        <rect x="148" y="133" width="24" height="17" fill="#1a2e45"/>
+        <rect x="153" y="135" width="6" height="15" fill="#ff9a3c" opacity=".5"/>
+        <rect x="161" y="135" width="6" height="15" fill="#ff9a3c" opacity=".5"/>
+        <!-- Right cluster -->
+        <rect x="215" y="65" width="38" height="85" fill="url(#bldMid)"/>
+        <rect x="220" y="74" width="6" height="5" fill="#ffd166" opacity=".7"/>
+        <rect x="229" y="74" width="6" height="5" fill="#ffd166" opacity=".4"/>
+        <rect x="238" y="74" width="6" height="5" fill="#ffaa44" opacity=".8"/>
+        <rect x="220" y="86" width="6" height="5" fill="#ffd166" opacity=".5"/>
+        <rect x="229" y="86" width="6" height="5" fill="#ffd166" opacity=".9"/>
+        <rect x="238" y="86" width="6" height="5" fill="#ffd166" opacity=".6"/>
+        <rect x="220" y="98" width="6" height="5" fill="#ffaa44" opacity=".7"/>
+        <rect x="229" y="98" width="6" height="5" fill="#ffd166" opacity=".3"/>
+        <rect x="238" y="98" width="6" height="5" fill="#ffd166" opacity=".8"/>
+        <rect x="220" y="110" width="6" height="5" fill="#ffd166" opacity=".6"/>
+        <rect x="229" y="110" width="6" height="5" fill="#ffd166" opacity=".5"/>
+        <rect x="238" y="110" width="6" height="5" fill="#ffd166" opacity=".4"/>
+        <rect x="258" y="80" width="30" height="70" fill="url(#bldDark)"/>
+        <rect x="265" y="88" width="5" height="4" fill="#ffd166" opacity=".6"/>
+        <rect x="273" y="88" width="5" height="4" fill="#ffd166" opacity=".4"/>
+        <rect x="265" y="98" width="5" height="4" fill="#ffaa44" opacity=".7"/>
+        <rect x="273" y="98" width="5" height="4" fill="#ffd166" opacity=".5"/>
+        <rect x="265" y="108" width="5" height="4" fill="#ffd166" opacity=".6"/>
+        <rect x="273" y="108" width="5" height="4" fill="#ffd166" opacity=".3"/>
+        <rect x="265" y="118" width="5" height="4" fill="#ffaa44" opacity=".8"/>
+        <rect x="273" y="118" width="5" height="4" fill="#ffd166" opacity=".6"/>
+        <!-- Ground -->
+        <rect x="0" y="148" width="320" height="4" fill="#0d1b2a"/>
+        <rect x="0" y="148" width="320" height="1" fill="#ff6b35" opacity=".4"/>
+        <!-- Stars -->
+        <circle cx="20"  cy="15"  r="1"   fill="#fff" opacity=".8"/>
+        <circle cx="55"  cy="8"   r=".8"  fill="#fff" opacity=".6"/>
+        <circle cx="90"  cy="22"  r="1.2" fill="#fff" opacity=".9"/>
+        <circle cx="220" cy="12"  r=".9"  fill="#fff" opacity=".7"/>
+        <circle cx="260" cy="25"  r="1"   fill="#fff" opacity=".6"/>
+        <circle cx="295" cy="10"  r=".8"  fill="#fff" opacity=".8"/>
+        <circle cx="105" cy="30"  r=".7"  fill="#ffd166" opacity=".9"/>
+        <circle cx="200" cy="18"  r=".7"  fill="#ffd166" opacity=".8"/>
+      </svg>
+      <div class="logo-tagline">Society Management</div>
+      <div class="logo-sub">Resident Portal System</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h2>Welcome Back</h2>
+      <p class="sub">Sign in to your account</p>
+      <div class="field">
+        <label class="lbl">Username</label>
+        <input type="text" id="loginUser" placeholder="Enter username" autocomplete="off">
+      </div>
+      <div class="field">
+        <label class="lbl">Password</label>
+        <input type="password" id="loginPass" placeholder="Enter password">
+        <label class="show-pw"><input type="checkbox" onchange="togglePw('loginPass',this)"> Show password</label>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Login →</button>
+      <div class="auth-footer">New user? <a onclick="showScreen('registerScreen')">Create account</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REGISTER ══ -->
+<div id="registerScreen" class="screen">
+  <div class="auth-left">
+    <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+    <div class="stars" id="starsContainer2"></div>
+    <div class="logo-wrap">
+      <svg class="skyline-logo" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+        <rect width="320" height="180" fill="url(#sky)"/>
+        <ellipse cx="160" cy="135" rx="80" ry="28" fill="url(#sunRadial)" opacity=".9"/>
+        <circle cx="160" cy="128" r="18" fill="url(#sunGlow)" filter="url(#glow)"/>
+        <rect x="0" y="150" width="320" height="30" fill="#0d1b2a" opacity=".7"/>
+        <rect x="130" y="40" width="60" height="110" fill="url(#bldMid)"/>
+        <polygon points="130,40 160,20 190,40" fill="#1a2e45"/>
+        <circle cx="160" cy="20" r="3" fill="#ff6b35" filter="url(#glow)"/>
+        <rect x="148" y="50" width="8" height="7" fill="#ffd166" opacity=".7"/>
+        <rect x="160" y="63" width="8" height="7" fill="#ffd166" opacity=".8"/>
+        <rect x="10" y="85" width="28" height="65" fill="url(#bldDark)"/>
+        <rect x="215" y="65" width="38" height="85" fill="url(#bldMid)"/>
+        <rect x="258" y="80" width="30" height="70" fill="url(#bldDark)"/>
+        <rect x="0" y="148" width="320" height="4" fill="#0d1b2a"/>
+        <circle cx="20" cy="15" r="1" fill="#fff" opacity=".8"/>
+        <circle cx="90" cy="22" r="1.2" fill="#fff" opacity=".9"/>
+        <circle cx="260" cy="25" r="1" fill="#fff" opacity=".6"/>
+      </svg>
+      <div class="logo-tagline">Join Us Today</div>
+      <div class="logo-sub">Create your account</div>
+    </div>
+  </div>
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+      <h2>Create Account</h2>
+      <p class="sub">New user registration</p>
+      <div class="field">
+        <label class="lbl">Username</label>
+        <input type="text" id="regUser" placeholder="Choose a username" autocomplete="off">
+      </div>
+      <div class="field">
+        <label class="lbl">Password</label>
+        <input type="password" id="regPass" placeholder="Choose a password">
+        <label class="show-pw"><input type="checkbox" onchange="togglePw('regPass',this)"> Show password</label>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">Sign Up →</button>
+      <div class="auth-footer">Already registered? <a onclick="showScreen('loginScreen')">Login here</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DASHBOARD ══ -->
+<div id="dashScreen" class="screen">
+  <header class="topbar">
+    <div class="topbar-brand">
+      <svg class="mini-skyline" viewBox="0 0 52 30" xmlns="http://www.w3.org/2000/svg">
+        <rect width="52" height="30" fill="#0d1b2a"/>
+        <ellipse cx="26" cy="24" rx="20" ry="7" fill="#ff6b35" opacity=".5"/>
+        <circle cx="26" cy="21" r="5" fill="#ffd166" opacity=".7"/>
+        <rect x="2"  y="12" width="8"  height="18" fill="#1a2e45"/>
+        <rect x="12" y="8"  width="12" height="22" fill="#243b55"/>
+        <polygon points="12,8 18,2 24,8" fill="#1a2e45"/>
+        <rect x="26" y="10" width="10" height="20" fill="#1a2e45"/>
+        <rect x="38" y="13" width="12" height="17" fill="#243b55"/>
+        <rect x="4"  y="16" width="2" height="2" fill="#ffd166" opacity=".8"/>
+        <rect x="14" y="12" width="2" height="2" fill="#ffd166" opacity=".7"/>
+        <rect x="18" y="12" width="2" height="2" fill="#ffaa44" opacity=".9"/>
+        <rect x="28" y="14" width="2" height="2" fill="#ffd166" opacity=".6"/>
+        <rect x="40" y="17" width="2" height="2" fill="#ffd166" opacity=".7"/>
+        <rect x="0" y="28" width="52" height="2" fill="#0d1b2a"/>
+      </svg>
+      <div class="topbar-brand-text">Society <span>Management</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <span class="user-name" id="userLabel">User</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Logout</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-title">
+        <h2>Society Registry</h2>
+        <p>Manage all registered housing societies</p>
+      </div>
+      <div class="header-actions">
+        <input type="file" id="xlsxInput" accept=".xlsx,.xls" onchange="importExcel(event)">
+        <button class="btn-excel-up" onclick="document.getElementById('xlsxInput').click()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Import Excel
+        </button>
+        <button class="btn-excel-down" onclick="exportExcel()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+        <div class="search-wrap">
+          <input type="text" id="searchInput" placeholder="🔍  Search societies…" oninput="renderTable()">
+          <button class="btn-outline-sm" onclick="document.getElementById('searchInput').value='';renderTable()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3 id="formTitle">Add New Society</h3>
+        <button class="btn btn-clr btn-sm" onclick="clearForm()">✕ Clear</button>
+      </div>
+      <div class="panel-body">
+        <div class="form-grid">
+          <div class="form-field"><label class="lbl">Society Name</label><input type="text" id="fName" placeholder="e.g. Green Valley Apts"></div>
+          <div class="form-field"><label class="lbl">No. of Houses</label><input type="text" id="fHouses" placeholder="e.g. 120"></div>
+          <div class="form-field"><label class="lbl">Address</label><input type="text" id="fAddress" placeholder="Street / Plot no."></div>
+          <div class="form-field"><label class="lbl">City</label><input type="text" id="fCity" placeholder="e.g. Mumbai"></div>
+          <div class="form-field"><label class="lbl">Pincode</label><input type="text" id="fPin" placeholder="e.g. 400001"></div>
+          <div class="form-field"><label class="lbl">Type</label><input type="text" id="fType" placeholder="Residential / Commercial"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-add" id="insertBtn" onclick="insertRow()">＋ Insert / Add</button>
+          <button class="btn btn-del" id="deleteBtn" onclick="deleteRow()" disabled>🗑 Delete Selected</button>
+          <button class="btn btn-clr" onclick="clearForm()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Society Name</th><th>No. of Houses</th><th>Address</th><th>City</th><th>Pincode</th><th>Type</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" style="display:none">
+        <div class="icon">🏙️</div>
+        <p>No societies found. Add one above or import an Excel file!</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let users = [{ username:'admin', password:'admin123' }];
+let societies = [
+  { name:'Green Valley Apartments', houses:'96',  address:'14 Park Road',    city:'Mumbai',    pin:'400051', type:'Residential' },
+  { name:'Sunrise Commercial Hub',  houses:'40',  address:'7 Ring Road',     city:'Delhi',     pin:'110001', type:'Commercial'  },
+  { name:'Heritage Gardens',        houses:'144', address:'22 Lake View Ave', city:'Bangalore', pin:'560001', type:'Mixed'       },
+];
+let currentUser = null, selectedIdx = -1, editMode = false;
+
+// Stars
+function makeStars(id) {
+  const c = document.getElementById(id); if(!c) return;
+  for(let i=0;i<55;i++){
+    const s=document.createElement('div'); s.className='star';
+    const sz=Math.random()*2+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*70}%;left:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${2+Math.random()*3}s`;
+    c.appendChild(s);
+  }
+}
+makeStars('starsContainer'); makeStars('starsContainer2');
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function togglePw(id,cb){document.getElementById(id).type=cb.checked?'text':'password';}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`show ${type}`;setTimeout(()=>t.className='',3000);}
+
+function doLogin(){
+  const u=document.getElementById('loginUser').value.trim();
+  const p=document.getElementById('loginPass').value;
+  if(!u||!p){toast('Please fill in all fields.','err');return;}
+  if(!users.find(x=>x.username===u&&x.password===p)){toast('Authentication failed.','err');return;}
+  currentUser=u;
+  document.getElementById('userLabel').textContent=u;
+  document.getElementById('userAvatar').textContent=u[0].toUpperCase();
+  showScreen('dashScreen'); renderStats(); renderTable();
+  toast(`Welcome back, ${u}! 🌆`);
+}
+
+function doRegister(){
+  const u=document.getElementById('regUser').value.trim();
+  const p=document.getElementById('regPass').value;
+  if(!u||!p){toast('Please fill in all fields.','err');return;}
+  if(users.find(x=>x.username===u)){toast('Username already exists.','err');return;}
+  users.push({username:u,password:p});
+  toast('Account created! You can now log in.');
+  showScreen('loginScreen');
+  document.getElementById('loginUser').value=u;
+  document.getElementById('loginPass').value='';
+}
+
+function doLogout(){
+  currentUser=null; selectedIdx=-1;
+  document.getElementById('loginUser').value='';
+  document.getElementById('loginPass').value='';
+  showScreen('loginScreen'); toast('Logged out successfully.');
+}
+
+function renderStats(){
+  const total=societies.length;
+  const houses=societies.reduce((s,r)=>s+(parseInt(r.houses)||0),0);
+  const cities=new Set(societies.map(r=>(r.city||'').trim()).filter(Boolean)).size;
+  document.getElementById('statsRow').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">Societies</div></div>
+    <div class="stat-card"><div class="stat-val">${houses.toLocaleString()}</div><div class="stat-lbl">Total Houses</div></div>
+    <div class="stat-card"><div class="stat-val">${cities}</div><div class="stat-lbl">Cities</div></div>`;
+}
+
+function getFiltered(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  return q?societies.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q))):societies;
+}
+
+function badgeCls(t){t=(t||'').toLowerCase();if(t.includes('res'))return 'badge-res';if(t.includes('com'))return 'badge-com';return 'badge-mix';}
+
+function renderTable(){
+  const rows=getFiltered();
+  const tbody=document.getElementById('tableBody');
+  const empty=document.getElementById('emptyState');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map((r,i)=>{
+    const gi=societies.indexOf(r);
+    return `<tr class="${gi===selectedIdx?'selected':''}" onclick="selectRow(${gi})">
+      <td style="color:#ccc;font-size:.78rem">${i+1}</td>
+      <td><strong>${r.name||'—'}</strong></td>
+      <td>${r.houses||'—'}</td>
+      <td>${r.address||'—'}</td>
+      <td>${r.city||'—'}</td>
+      <td>${r.pin||'—'}</td>
+      <td><span class="badge ${badgeCls(r.type)}">${r.type||'—'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function selectRow(idx){
+  selectedIdx=idx; const r=societies[idx];
+  document.getElementById('fName').value=r.name;
+  document.getElementById('fHouses').value=r.houses;
+  document.getElementById('fAddress').value=r.address;
+  document.getElementById('fCity').value=r.city;
+  document.getElementById('fPin').value=r.pin;
+  document.getElementById('fType').value=r.type;
+  document.getElementById('formTitle').textContent='Edit Society';
+  document.getElementById('insertBtn').textContent='✔ Update';
+  document.getElementById('deleteBtn').disabled=false;
+  editMode=true; renderTable();
+}
+
+function insertRow(){
+  const name=document.getElementById('fName').value.trim();
+  const houses=document.getElementById('fHouses').value.trim();
+  const address=document.getElementById('fAddress').value.trim();
+  const city=document.getElementById('fCity').value.trim();
+  const pin=document.getElementById('fPin').value.trim();
+  const type=document.getElementById('fType').value.trim();
+  if(!name){toast('Society name is required.','err');return;}
+  if(editMode&&selectedIdx>=0){
+    societies[selectedIdx]={name,houses,address,city,pin,type};
+    toast('Society updated successfully.');
+  } else {
+    societies.push({name,houses,address,city,pin,type});
+    toast('Society added successfully.');
+  }
+  clearForm(); renderStats(); renderTable();
+}
+
+function deleteRow(){
+  if(selectedIdx<0)return;
+  const name=societies[selectedIdx].name;
+  societies.splice(selectedIdx,1);
+  toast(`"${name}" deleted.`,'err');
+  clearForm(); renderStats(); renderTable();
+}
+
+function clearForm(){
+  ['fName','fHouses','fAddress','fCity','fPin','fType'].forEach(id=>document.getElementById(id).value='');
+  selectedIdx=-1; editMode=false;
+  document.getElementById('formTitle').textContent='Add New Society';
+  document.getElementById('insertBtn').textContent='＋ Insert / Add';
+  document.getElementById('deleteBtn').disabled=true;
+  renderTable();
+}
+
+// ── EXCEL IMPORT ──
+function importExcel(event){
+  const file=event.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=new Uint8Array(e.target.result);
+      const wb=XLSX.read(data,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!rows.length){toast('Excel file is empty.','err');return;}
+      const map=(row,keys)=>{
+        for(const k of keys){
+          const found=Object.keys(row).find(rk=>rk.toLowerCase().replace(/[\s_]/g,'')===k.toLowerCase().replace(/[\s_]/g,''));
+          if(found!==undefined)return String(row[found]);
+        }
+        return '';
+      };
+      const imported=rows.map(row=>({
+        name:    map(row,['societyname','name','society']),
+        houses:  map(row,['noofhouses','houses','numberofhouses','numhouses']),
+        address: map(row,['address','addr']),
+        city:    map(row,['city']),
+        pin:     map(row,['pincode','pin','zip','postal']),
+        type:    map(row,['type','societytype']),
+      }));
+      societies=[...societies,...imported];
+      renderStats(); renderTable();
+      toast(`✅ Imported ${imported.length} records from Excel!`);
+    }catch(err){toast('Failed to read Excel file.','err');}
+    event.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── EXCEL EXPORT ──
+function exportExcel(){
+  if(!societies.length){toast('No data to export.','err');return;}
+  const data=societies.map(r=>({'Society Name':r.name,'No of Houses':r.houses,'Address':r.address,'City':r.city,'Pincode':r.pin,'Type':r.type}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:28},{wch:14},{wch:26},{wch:16},{wch:12},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Societies');
+  XLSX.writeFile(wb,'society-registry.xlsx');
+  toast('📥 Exported to society-registry.xlsx!');
+}
+</script>
+</body>
+</html>
